@@ -23,3 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 temp-init
+
+# Backend
+backend/uploads/
+backend/.env
+*.env
+
+# Docker
+.docker/
