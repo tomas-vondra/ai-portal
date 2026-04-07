@@ -1,5 +1,5 @@
 import { useParams, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useProjectStore } from '../store/projectStore';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Breadcrumb } from '../components/layout/Breadcrumb';
@@ -38,16 +38,17 @@ export function ProjectDetailPage() {
   const { projectId, phaseId } = useParams();
   const project = useProjectStore((s) => s.getProject(projectId ?? ''));
   const refreshProject = useProjectStore((s) => s.refreshProject);
-  const isLoading = useProjectStore((s) => s.isLoading);
+  const [loading, setLoading] = useState(!project);
 
   useEffect(() => {
     if (projectId) {
-      refreshProject(projectId);
+      setLoading(true);
+      refreshProject(projectId).finally(() => setLoading(false));
     }
   }, [projectId, refreshProject]);
 
   if (!project) {
-    if (isLoading) {
+    if (loading) {
       return (
         <div className="flex items-center justify-center h-[calc(100vh-3.5rem)]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />

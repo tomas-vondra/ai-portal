@@ -3,9 +3,13 @@ import type { Project, Notification } from '../types';
 const API_BASE = '/api/v1';
 
 async function request<T>(path: string, opts?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { ...opts?.headers as Record<string, string> };
+  if (opts?.body) {
+    headers['Content-Type'] = 'application/json';
+  }
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...opts?.headers },
     ...opts,
+    headers,
   });
 
   if (!res.ok) {

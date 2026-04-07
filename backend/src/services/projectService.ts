@@ -9,7 +9,7 @@ export async function listProjects(opts: {
   search?: string;
   sort?: 'date' | 'phase';
   archived?: boolean;
-}) {
+}): Promise<Project[]> {
   let query = db.select().from(projects).$dynamic();
 
   const conditions = [];
@@ -35,7 +35,8 @@ export async function listProjects(opts: {
     query = query.orderBy(asc(projects.createdAt));
   }
 
-  return query;
+  const rows = await query;
+  return Promise.all(rows.map((row) => getProjectById(row.id)));
 }
 
 export async function getProjectById(projectId: string): Promise<Project> {
