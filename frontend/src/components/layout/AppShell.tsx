@@ -2,12 +2,29 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Brain, Bell } from 'lucide-react';
 import { useNotificationStore } from '../../store/notificationStore';
 import { NotificationPanel } from '../panels/NotificationPanel';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useProjectStore } from '../../store/projectStore';
+import { useNotificationStream } from '../../hooks/useNotificationStream';
+import { ToastContainer } from '../common/ToastContainer';
 
 export function AppShell() {
   const location = useLocation();
   const { unreadCount } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
+  const addNotification = useNotificationStore((s) => s.addNotification);
+  const fetchProjects = useProjectStore((s) => s.fetchProjects);
+  const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
+
+  useEffect(() => {
+    fetchProjects();
+    fetchNotifications();
+  }, [fetchProjects, fetchNotifications]);
+
+  const handleNotification = useCallback((notification: any) => {
+    addNotification(notification);
+  }, [addNotification]);
+
+  useNotificationStream({ onNotification: handleNotification });
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -53,6 +70,7 @@ export function AppShell() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <ToastContainer />
     </div>
   );
 }

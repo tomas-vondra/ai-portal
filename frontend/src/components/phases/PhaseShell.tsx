@@ -1,7 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import { useState, useCallback, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Clock, Code2, AlertTriangle, RefreshCw, Info, Download } from 'lucide-react';
-import type { PhaseState } from '../../types';
+import type { PhaseState, LogEntry } from '../../types';
+import { useLogStream } from '../../hooks/useLogStream';
+import { phaseApi } from '../../services/api';
 import { getPhaseConfig, PHASE_CONFIGS } from '../../utils/phaseConfig';
 import { StatusBadge } from '../common/StatusBadge';
 import { AgentLog } from '../common/AgentLog';
@@ -17,13 +19,13 @@ interface PhaseShellProps {
   phase: PhaseState;
   inputSection?: ReactNode;
   outputSection?: ReactNode;
-  onStart?: () => void;
+  onPrepareInput?: () => Record<string, unknown> | null;
   startLabel?: string;
   canApprove?: boolean;
   children?: ReactNode;
 }
 
-export function PhaseShell({ projectId, phase, inputSection, outputSection, onStart, startLabel, canApprove = true, children }: PhaseShellProps) {
+export function PhaseShell({ projectId, phase, inputSection, outputSection, onPrepareInput, startLabel, canApprove = true, children }: PhaseShellProps) {
   const config = getPhaseConfig(phase.phaseId);
   const store = useProjectStore();
   const navigate = useNavigate();
@@ -34,6 +36,19 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
   const [showApprovedRejectModal, setShowApprovedRejectModal] = useState(false);
   const [rejectFeedback, setRejectFeedback] = useState('');
   const [rejectTags, setRejectTags] = useState<string[]>([]);
+  const [runId, setRunId] = useState<string | null>(null);
+  const [isOperating, setIsOperating] = useState(false);
+
+  const onLog = useCallback((entry: LogEntry) => {
+    store.addLogEntry(projectId, phase.phaseId, entry);
+  }, [store, projectId, phase.phaseId]);
+
+  const onDone = useCallback(async () => {
+    setRunId(null);
+    await store.refreshProject(projectId);
+  }, [store, projectId]);
+
+  useLogStream({ projectId, phaseId: phase.phaseId, runId, onLog, onDone });
 
   const isContinuous = config.type === 'continuous';
   const isLocked = phase.status === 'locked';
@@ -57,41 +72,69 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
 
   const tags = ['Chybný obsah', 'Špatný formát', 'Nepochopil zadání', 'Jiné'];
 
-  const handleReject = () => {
-    store.rejectPhase(projectId, phase.phaseId, rejectFeedback);
+  const handleReject = async () => {
+    setIsOperating(true);
+    try {
+      await store.rejectPhase(projectId, phase.phaseId, rejectFeedback);
+    } finally {
+      setIsOperating(false);
+    }
     setShowRejectModal(false);
     setRejectFeedback('');
     setRejectTags([]);
   };
 
-  const handleApprovedReject = () => {
-    store.rejectApprovedPhase(projectId, phase.phaseId, rejectFeedback);
+  const handleApprovedReject = async () => {
+    setIsOperating(true);
+    try {
+      await store.rejectApprovedPhase(projectId, phase.phaseId, rejectFeedback);
+    } finally {
+      setIsOperating(false);
+    }
     setShowApprovedRejectModal(false);
     setRejectFeedback('');
   };
 
-  const handleApprove = () => {
-    store.approvePhase(projectId, phase.phaseId);
-    // Navigate to next waiting phase
-    const updatedProject = store.getProject(projectId);
-    if (updatedProject) {
-      const nextPhase = PHASE_CONFIGS.find((cfg) =>
-        cfg.id > phase.phaseId && updatedProject.phases[cfg.id]?.status === 'waiting',
-      );
-      if (nextPhase) {
-        navigate(`/projects/${projectId}/phase/${nextPhase.id}`);
+  const handleApprove = async () => {
+    setIsOperating(true);
+    try {
+      await store.approvePhase(projectId, phase.phaseId);
+      // Navigate to next waiting phase (store is refreshed after approve)
+      const updatedProject = store.getProject(projectId);
+      if (updatedProject) {
+        const nextPhase = PHASE_CONFIGS.find((cfg) =>
+          cfg.id > phase.phaseId && updatedProject.phases[cfg.id]?.status === 'waiting',
+        );
+        if (nextPhase) {
+          navigate(`/projects/${projectId}/phase/${nextPhase.id}`);
+        }
       }
+    } finally {
+      setIsOperating(false);
     }
   };
 
   const handleExport = () => {
-    const blob = new Blob([JSON.stringify(phase.output, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `F${phase.phaseId}-${config.name.replace(/\s+/g, '_')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    window.open(phaseApi.exportJson(projectId, phase.phaseId));
+  };
+
+  const handleStart = async () => {
+    if (!onPrepareInput) return;
+    const input = onPrepareInput();
+    if (input === null) return;
+
+    setIsOperating(true);
+    try {
+      if (Object.keys(input).length > 0) {
+        await store.setPhaseInput(projectId, phase.phaseId, input);
+      }
+      const result = await store.startAgent(projectId, phase.phaseId);
+      setRunId(result.runId);
+    } catch {
+      // Error is handled by store toast
+    } finally {
+      setIsOperating(false);
+    }
   };
 
   const handleTogglePrompt = () => {
@@ -189,7 +232,17 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
               variant="danger"
               size="md"
               icon={<RefreshCw className="w-4 h-4" />}
-              onClick={() => store.retryAgent(projectId, phase.phaseId)}
+              onClick={async () => {
+                setIsOperating(true);
+                try {
+                  const result = await store.retryAgent(projectId, phase.phaseId);
+                  setRunId(result.runId);
+                } catch {
+                  // handled by store
+                } finally {
+                  setIsOperating(false);
+                }
+              }}
               className="shrink-0 !bg-red-600 !text-white hover:!bg-red-700 !border-red-600"
             >
               Zkusit znovu
@@ -219,13 +272,13 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
         )}
 
         {/* Start button */}
-        {(canStart || isLocked) && onStart && (
+        {(canStart || isLocked) && onPrepareInput && (
           <div>
             <Button
               variant="primary"
               size="lg"
-              onClick={onStart}
-              disabled={isLocked}
+              onClick={handleStart}
+              disabled={isLocked || isOperating}
               title={isLocked && blockingConfig ? `Nejprve dokončete F${blockingConfig.id}. ${blockingConfig.name}` : undefined}
             >
               {startLabel ?? 'Spustit'}
@@ -251,13 +304,14 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
         {/* Review action buttons (not for continuous — they auto-approve) */}
         {isReview && !isContinuous && (
           <div className="flex items-center gap-3 pt-4 border-t border-surface-200">
-            <Button variant="success" size="lg" onClick={handleApprove} disabled={!canApprove}>
+            <Button variant="success" size="lg" onClick={handleApprove} disabled={!canApprove || isOperating}>
               Schválit
             </Button>
             <Button
               variant="danger"
               size="lg"
               onClick={() => setShowRejectModal(true)}
+              disabled={isOperating}
             >
               Zamítnout & Přegenerovat
             </Button>
@@ -267,13 +321,14 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
         {/* Approve existing output (phase re-unlocked after upstream regen) */}
         {canStart && hasOutput && !isContinuous && (
           <div className="flex items-center gap-3 pt-4 border-t border-surface-200">
-            <Button variant="success" size="lg" onClick={handleApprove} disabled={!canApprove}>
+            <Button variant="success" size="lg" onClick={handleApprove} disabled={!canApprove || isOperating}>
               Schválit stávající výstup
             </Button>
             <Button
               variant="danger"
               size="lg"
               onClick={() => setShowRejectModal(true)}
+              disabled={isOperating}
             >
               Zamítnout & Přegenerovat
             </Button>
@@ -288,6 +343,7 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
               size="lg"
               icon={<Download className="w-4 h-4" />}
               onClick={handleExport}
+              disabled={isOperating}
             >
               Exportovat
             </Button>
@@ -295,6 +351,7 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
               variant="danger"
               size="lg"
               onClick={() => setShowApprovedRejectModal(true)}
+              disabled={isOperating}
             >
               Zamítnout & Přegenerovat
             </Button>
@@ -317,8 +374,8 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
         versions={phase.versions}
         currentVersionId={phase.currentVersionId}
         currentOutput={phase.output}
-        onRestore={(versionId) => {
-          store.restoreVersion(projectId, phase.phaseId, versionId);
+        onRestore={async (versionId) => {
+          await store.restoreVersion(projectId, phase.phaseId, versionId);
           setShowVersions(false);
         }}
       />
@@ -327,8 +384,12 @@ export function PhaseShell({ projectId, phase, inputSection, outputSection, onSt
         onClose={() => setShowPrompt(false)}
         prompt={phase.systemPrompt}
         isModified={phase.systemPromptModified}
-        onSave={(prompt) => store.updateSystemPrompt(projectId, phase.phaseId, prompt)}
-        onReset={() => store.resetSystemPrompt(projectId, phase.phaseId)}
+        onSave={async (prompt) => {
+          await store.updateSystemPrompt(projectId, phase.phaseId, prompt);
+        }}
+        onReset={async () => {
+          await store.resetSystemPrompt(projectId, phase.phaseId);
+        }}
       />
 
       {/* Reject modal (from review) */}

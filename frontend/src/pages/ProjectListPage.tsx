@@ -10,7 +10,7 @@ import { Button } from '../components/common/Button';
 import { formatDate } from '../utils/formatters';
 
 export function ProjectListPage() {
-  const { projects, createProject, archiveProject } = useProjectStore();
+  const { projects, createProject, archiveProject, isLoading } = useProjectStore();
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -27,13 +27,17 @@ export function ProjectListPage() {
       return getCurrentPhase(a) - getCurrentPhase(b);
     });
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newName.trim() || !newClient.trim()) return;
-    const id = createProject(newName.trim(), newClient.trim());
-    setShowCreate(false);
-    setNewName('');
-    setNewClient('');
-    navigate(`/projects/${id}/phase/1`);
+    try {
+      const id = await createProject(newName.trim(), newClient.trim());
+      setShowCreate(false);
+      setNewName('');
+      setNewClient('');
+      navigate(`/projects/${id}/phase/1`);
+    } catch {
+      // Error handled by store toast
+    }
   };
 
   return (
@@ -50,7 +54,11 @@ export function ProjectListPage() {
         </Button>
       </div>
 
-      {projects.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
+        </div>
+      ) : projects.length === 0 ? (
         <EmptyState
           title="Zatím žádné projekty"
           description="Vytvořte svůj první projekt a začněte automatizovat projektový proces."

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { DocumentPill } from '../common/DocumentPill';
 import { Upload, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 
@@ -11,14 +10,8 @@ interface Props {
 }
 
 export function Phase6Contracts({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
   const [fileName, setFileName] = useState<string | null>(null);
-
-  const handleStart = () => {
-    store.setPhaseInput(projectId, 6, { fileName });
-    store.startAgent(projectId, 6);
-  };
 
   const severityConfig = {
     critical: { icon: AlertTriangle, bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', label: 'Kritické' },
@@ -30,7 +23,7 @@ export function Phase6Contracts({ projectId, phase }: Props) {
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => ({ fileName })}
       startLabel="Analyzovat smlouvu"
       inputSection={
         <div className="space-y-4">

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { Button } from '../common/Button';
 
 interface Props {
@@ -10,7 +9,6 @@ interface Props {
 }
 
 export function Phase5Offer({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
   const [hourlyRate, setHourlyRate] = useState<string>('2500');
   const [touched, setTouched] = useState(false);
@@ -18,18 +16,15 @@ export function Phase5Offer({ projectId, phase }: Props) {
   const rateNum = Number(hourlyRate);
   const rateError = touched && (!hourlyRate.trim() || isNaN(rateNum) || rateNum <= 0);
 
-  const handleStart = () => {
-    setTouched(true);
-    if (!hourlyRate.trim() || isNaN(rateNum) || rateNum <= 0) return;
-    store.setPhaseInput(projectId, 5, { hourlyRate: rateNum });
-    store.startAgent(projectId, 5);
-  };
-
   return (
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => {
+        setTouched(true);
+        if (!hourlyRate.trim() || isNaN(rateNum) || rateNum <= 0) return null;
+        return { hourlyRate: rateNum };
+      }}
       startLabel="Generovat nabídku"
       inputSection={
         <div className="space-y-4">

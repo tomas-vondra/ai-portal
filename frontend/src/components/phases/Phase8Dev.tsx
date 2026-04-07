@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { ExternalLink, GitPullRequest } from 'lucide-react';
 
 interface Props {
@@ -10,7 +9,6 @@ interface Props {
 }
 
 export function Phase8Dev({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
   const [ticketUrl, setTicketUrl] = useState('');
   const [touched, setTouched] = useState(false);
@@ -18,19 +16,15 @@ export function Phase8Dev({ projectId, phase }: Props) {
   const urlError = touched && !ticketUrl.trim();
   const isRunning = phase.status === 'running';
 
-  const handleStart = () => {
-    setTouched(true);
-    if (!ticketUrl.trim()) return;
-    store.setPhaseInput(projectId, 8, { ticketUrl });
-    store.startAgent(projectId, 8);
-    setTouched(false);
-  };
-
   return (
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => {
+        setTouched(true);
+        if (!ticketUrl.trim()) return null;
+        return { ticketUrl };
+      }}
       startLabel="Spustit implementaci"
       inputSection={
         <div className="space-y-4">

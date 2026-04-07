@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 
 interface Props {
@@ -10,20 +9,14 @@ interface Props {
 }
 
 export function Phase9Delivery({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
   const [frequency, setFrequency] = useState('manual');
-
-  const handleStart = () => {
-    store.setPhaseInput(projectId, 9, { frequency });
-    store.startAgent(projectId, 9);
-  };
 
   return (
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => ({ frequency })}
       startLabel="Zkontrolovat nyní"
       inputSection={
         <div className="space-y-4">

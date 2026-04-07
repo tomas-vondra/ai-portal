@@ -18,10 +18,6 @@ export function Phase7Setup({ projectId, phase }: Props) {
   const [githubCreated, setGithubCreated] = useState(!!output?.githubUrl);
   const [jiraCreated, setJiraCreated] = useState(!!output?.jiraUrl);
 
-  const handleStart = () => {
-    store.startAgent(projectId, 7);
-  };
-
   const handleApproveTickets = () => {
     setStep(2);
     if (output) {
@@ -33,7 +29,7 @@ export function Phase7Setup({ projectId, phase }: Props) {
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => ({})}
       startLabel="Připravit rozpad ticketů"
       canApprove={step === 2}
       inputSection={

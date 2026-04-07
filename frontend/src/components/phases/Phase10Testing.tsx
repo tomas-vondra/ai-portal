@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { CheckCircle, XCircle, MinusCircle, Bug, Ticket } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -11,21 +10,12 @@ interface Props {
 }
 
 export function Phase10Testing({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
   const [testUrl, setTestUrl] = useState('');
   const [ticketsCreated, setTicketsCreated] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const urlError = touched && !testUrl.trim();
-
-  const handleStart = () => {
-    setTouched(true);
-    if (!testUrl.trim()) return;
-    store.setPhaseInput(projectId, 10, { testUrl });
-    store.startAgent(projectId, 10);
-    setTouched(false);
-  };
 
   const statusIcons = {
     passed: <CheckCircle className="w-4 h-4 text-green-500" />,
@@ -46,7 +36,11 @@ export function Phase10Testing({ projectId, phase }: Props) {
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => {
+        setTouched(true);
+        if (!testUrl.trim()) return null;
+        return { testUrl };
+      }}
       startLabel="Spustit testování"
       inputSection={
         <div className="space-y-4">

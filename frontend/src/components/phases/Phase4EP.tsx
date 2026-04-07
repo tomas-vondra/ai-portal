@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 
@@ -17,17 +16,10 @@ const mockSections = [
 ];
 
 export function Phase4EP({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
   const [showModal, setShowModal] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
   const [sections, setSections] = useState(mockSections);
-
-  const handleStart = () => {
-    store.startAgent(projectId, 4);
-    // Simulate iterative interaction
-    setTimeout(() => setShowModal(true), 3000);
-  };
 
   const handleSectionAction = (action: 'approve' | 'edit' | 'reject') => {
     setSections((s) => s.map((sec, i) =>
@@ -45,7 +37,7 @@ export function Phase4EP({ projectId, phase }: Props) {
       <PhaseShell
         projectId={projectId}
         phase={phase}
-        onStart={handleStart}
+        onPrepareInput={() => ({})}
         startLabel="Spustit tvorbu EP"
         inputSection={
           <div className="bg-surface-50 rounded-lg p-4 text-sm text-surface-500">

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { DocumentPill } from '../common/DocumentPill';
 import { Upload } from 'lucide-react';
 
@@ -11,7 +10,6 @@ interface Props {
 }
 
 export function Phase2Discovery({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const [text, setText] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
@@ -19,13 +17,6 @@ export function Phase2Discovery({ projectId, phase }: Props) {
   const output = phase.output as any;
   const hasInput = !!fileName || !!text.trim();
   const inputError = touched && !hasInput;
-
-  const handleStart = () => {
-    setTouched(true);
-    if (!hasInput) return;
-    store.setPhaseInput(projectId, 2, { text, fileName });
-    store.startAgent(projectId, 2);
-  };
 
   const priorityColors = {
     high: 'bg-red-50 text-red-700 border-red-200',
@@ -39,7 +30,11 @@ export function Phase2Discovery({ projectId, phase }: Props) {
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => {
+        setTouched(true);
+        if (!hasInput) return null;
+        return { text, fileName };
+      }}
       startLabel="Spustit analýzu"
       inputSection={
         <div className="space-y-4">

@@ -1,3 +1,5 @@
+import type { Project, Notification } from '../types';
+
 const API_BASE = '/api/v1';
 
 async function request<T>(path: string, opts?: RequestInit): Promise<T> {
@@ -19,9 +21,9 @@ async function request<T>(path: string, opts?: RequestInit): Promise<T> {
 export const projectApi = {
   list: (params?: { search?: string; sort?: string; archived?: string }) => {
     const qs = new URLSearchParams(params as Record<string, string>).toString();
-    return request(`/projects${qs ? `?${qs}` : ''}`);
+    return request<Project[]>(`/projects${qs ? `?${qs}` : ''}`);
   },
-  get: (id: string) => request(`/projects/${id}`),
+  get: (id: string) => request<Project>(`/projects/${id}`),
   create: (name: string, client: string) =>
     request<{ id: string }>('/projects', { method: 'POST', body: JSON.stringify({ name, client }) }),
   update: (id: string, data: { name?: string; client?: string }) =>
@@ -92,7 +94,7 @@ export const fileApi = {
 
 // ─── Notifications ───────────────────────────────────────
 export const notificationApi = {
-  list: () => request('/notifications'),
+  list: () => request<Notification[]>('/notifications'),
   markRead: (id: string) =>
     request(`/notifications/${id}/read`, { method: 'POST' }),
   markAllRead: () =>

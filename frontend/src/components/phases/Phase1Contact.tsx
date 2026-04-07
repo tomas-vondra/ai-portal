@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 
 interface Props {
   projectId: string;
@@ -9,7 +8,6 @@ interface Props {
 }
 
 export function Phase1Contact({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const [companyName, setCompanyName] = useState('');
   const [sources, setSources] = useState({
     google: true,
@@ -28,18 +26,15 @@ export function Phase1Contact({ projectId, phase }: Props) {
     setSources((s) => ({ ...s, [key]: !s[key] }));
   };
 
-  const handleStart = () => {
-    setTouched(true);
-    if (!companyName.trim() || !hasAnySource) return;
-    store.setPhaseInput(projectId, 1, { companyName, sources });
-    store.startAgent(projectId, 1);
-  };
-
   return (
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => {
+        setTouched(true);
+        if (!companyName.trim() || !hasAnySource) return null;
+        return { companyName, sources };
+      }}
       startLabel="Spustit investigaci"
       inputSection={
         <div className="space-y-4">

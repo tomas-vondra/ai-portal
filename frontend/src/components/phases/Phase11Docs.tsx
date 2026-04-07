@@ -1,6 +1,5 @@
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { FileText, Download, AlertCircle } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -10,12 +9,7 @@ interface Props {
 }
 
 export function Phase11Docs({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
-
-  const handleStart = () => {
-    store.startAgent(projectId, 11);
-  };
 
   const docIcons = {
     user: '📘',
@@ -27,7 +21,7 @@ export function Phase11Docs({ projectId, phase }: Props) {
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => ({})}
       startLabel="Generovat dokumentaci"
       inputSection={
         <div className="space-y-3">

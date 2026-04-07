@@ -12,15 +12,11 @@ export function Phase3Concept({ projectId, phase }: Props) {
   const output = phase.output as any;
   const prevPhase = store.getProject(projectId)?.phases[2];
 
-  const handleStart = () => {
-    store.startAgent(projectId, 3);
-  };
-
   return (
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => ({})}
       startLabel="Spustit návrh konceptu"
       inputSection={
         prevPhase?.output ? (

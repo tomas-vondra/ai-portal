@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { Activity, AlertTriangle, ArrowUpCircle } from 'lucide-react';
 
 interface Props {
@@ -10,20 +9,11 @@ interface Props {
 }
 
 export function Phase13Ops({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
   const [monitoringUrl, setMonitoringUrl] = useState('');
   const [touched, setTouched] = useState(false);
 
   const urlError = touched && !monitoringUrl.trim();
-
-  const handleStart = () => {
-    setTouched(true);
-    if (!monitoringUrl.trim()) return;
-    store.setPhaseInput(projectId, 13, { monitoringUrl });
-    store.startAgent(projectId, 13);
-    setTouched(false);
-  };
 
   const priorityColors = {
     high: 'bg-red-50 text-red-700 border-red-200',
@@ -35,7 +25,11 @@ export function Phase13Ops({ projectId, phase }: Props) {
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => {
+        setTouched(true);
+        if (!monitoringUrl.trim()) return null;
+        return { monitoringUrl };
+      }}
       startLabel="Připojit monitoring"
       inputSection={
         <div className="space-y-4">

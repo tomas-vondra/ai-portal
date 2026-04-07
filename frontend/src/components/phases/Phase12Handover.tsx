@@ -1,6 +1,5 @@
 import { PhaseShell } from './PhaseShell';
 import type { PhaseState } from '../../types';
-import { useProjectStore } from '../../store/projectStore';
 import { Download, CheckCircle, XCircle, MinusCircle } from 'lucide-react';
 import { Button } from '../common/Button';
 
@@ -10,12 +9,7 @@ interface Props {
 }
 
 export function Phase12Handover({ projectId, phase }: Props) {
-  const store = useProjectStore();
   const output = phase.output as any;
-
-  const handleStart = () => {
-    store.startAgent(projectId, 12);
-  };
 
   const statusIcons = {
     delivered: <CheckCircle className="w-4 h-4 text-green-500" />,
@@ -27,7 +21,7 @@ export function Phase12Handover({ projectId, phase }: Props) {
     <PhaseShell
       projectId={projectId}
       phase={phase}
-      onStart={handleStart}
+      onPrepareInput={() => ({})}
       startLabel="Připravit předávací dokumenty"
       inputSection={
         <div className="bg-surface-50 rounded-lg p-4 text-sm text-surface-500">
