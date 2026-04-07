@@ -36,7 +36,6 @@ services:
       REDIS_URL: redis://redis:6379
       PORT: "3001"
       HOST: "0.0.0.0"
-      SESSION_SECRET: dev-session-secret-change-in-prod
       UPLOAD_DIR: /app/uploads
     depends_on:
       postgres:
@@ -54,7 +53,6 @@ services:
     environment:
       DATABASE_URL: postgres://portal:portal@postgres:5432/ai_portal
       REDIS_URL: redis://redis:6379
-      SESSION_SECRET: dev-session-secret-change-in-prod
       UPLOAD_DIR: /app/uploads
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:

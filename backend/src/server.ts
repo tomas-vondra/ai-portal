@@ -1,9 +1,7 @@
 import Fastify from 'fastify';
-import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import { config } from './config.js';
-import { authRoutes } from './routes/auth.js';
 import { projectRoutes } from './routes/projects.js';
 import { phaseRoutes } from './routes/phases.js';
 import { fileRoutes } from './routes/files.js';
@@ -16,10 +14,6 @@ const app = Fastify({ logger: true });
 // Plugins
 await app.register(cors, {
   origin: true,
-  credentials: true,
-});
-await app.register(cookie, {
-  secret: config.SESSION_SECRET,
 });
 await app.register(multipart, {
   limits: { fileSize: config.MAX_FILE_SIZE_MB * 1024 * 1024 },
@@ -32,7 +26,6 @@ app.setErrorHandler(errorHandler);
 app.get('/api/v1/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
 // Routes
-await app.register(authRoutes, { prefix: '/api/v1/auth' });
 await app.register(projectRoutes, { prefix: '/api/v1/projects' });
 await app.register(phaseRoutes, { prefix: '/api/v1/projects' });
 await app.register(fileRoutes, { prefix: '/api/v1' });

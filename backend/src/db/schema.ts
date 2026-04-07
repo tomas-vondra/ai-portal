@@ -6,27 +6,12 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
-  passwordHash: text('password_hash').notNull(),
-  role: text('role', { enum: ['admin', 'user'] }).notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
-  sessions: many(sessions),
   projects: many(projects),
   notifications: many(notifications),
-}));
-
-// ─── Sessions ────────────────────────────────────────────
-export const sessions = pgTable('sessions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
-
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  user: one(users, { fields: [sessions.userId], references: [users.id] }),
 }));
 
 // ─── Projects ────────────────────────────────────────────

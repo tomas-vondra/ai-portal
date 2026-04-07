@@ -1,9 +1,7 @@
 import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../middleware/auth.js';
 import * as fileService from '../services/fileService.js';
 
 export async function fileRoutes(app: FastifyInstance) {
-  app.addHook('preHandler', requireAuth);
 
   // Upload file
   app.post('/projects/:id/phases/:phaseId/files', async (request, reply) => {

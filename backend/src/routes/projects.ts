@@ -1,11 +1,9 @@
 import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../middleware/auth.js';
 import * as projectService from '../services/projectService.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { SYSTEM_USER_ID } from '../config.js';
 
 export async function projectRoutes(app: FastifyInstance) {
-  app.addHook('preHandler', requireAuth);
-
   // List projects
   app.get('/', async (request) => {
     const { search, sort, archived } = request.query as {
@@ -24,7 +22,7 @@ export async function projectRoutes(app: FastifyInstance) {
   app.post('/', async (request, reply) => {
     const { name, client } = request.body as { name: string; client: string };
     if (!name || !client) throw new AppError(400, 'Name and client are required');
-    const id = await projectService.createProject(name, client, request.user!.id);
+    const id = await projectService.createProject(name, client, SYSTEM_USER_ID);
     return reply.status(201).send({ id });
   });
 

@@ -2,7 +2,6 @@ const API_BASE = '/api/v1';
 
 async function request<T>(path: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...opts?.headers },
     ...opts,
   });
@@ -15,18 +14,6 @@ async function request<T>(path: string, opts?: RequestInit): Promise<T> {
   if (res.status === 204) return undefined as T;
   return res.json();
 }
-
-// ─── Auth ────────────────────────────────────────────────
-export const auth = {
-  login: (email: string, password: string) =>
-    request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  logout: () =>
-    request('/auth/logout', { method: 'POST' }),
-  me: () =>
-    request<{ id: string; email: string; name: string; role: string }>('/auth/me'),
-  register: (email: string, name: string, password: string, role?: string) =>
-    request('/auth/register', { method: 'POST', body: JSON.stringify({ email, name, password, role }) }),
-};
 
 // ─── Projects ────────────────────────────────────────────
 export const projectApi = {
@@ -90,7 +77,6 @@ export const fileApi = {
     form.append('file', file);
     const res = await fetch(`${API_BASE}/projects/${projectId}/phases/${phaseId}/files`, {
       method: 'POST',
-      credentials: 'include',
       body: form,
     });
     if (!res.ok) throw new Error('Upload failed');

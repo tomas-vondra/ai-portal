@@ -1,27 +1,24 @@
 import 'dotenv/config';
-import bcrypt from 'bcrypt';
 import { db } from './index.js';
 import { users } from './schema.js';
 import { eq } from 'drizzle-orm';
+import { SYSTEM_USER_ID } from '../config.js';
 
 async function seed() {
   console.log('Seeding database...');
 
-  // Create admin user
-  const adminEmail = 'admin@ai-portal.local';
-  const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, adminEmail)).limit(1);
+  // Create system user for MVP (single-user, no auth)
+  const existing = await db.select({ id: users.id }).from(users).where(eq(users.id, SYSTEM_USER_ID)).limit(1);
 
   if (existing.length === 0) {
-    const passwordHash = await bcrypt.hash('admin123', 12);
     await db.insert(users).values({
-      email: adminEmail,
-      name: 'Admin',
-      passwordHash,
-      role: 'admin',
+      id: SYSTEM_USER_ID,
+      email: 'system@ai-portal.local',
+      name: 'System',
     });
-    console.log(`Created admin user: ${adminEmail} / admin123`);
+    console.log('Created system user');
   } else {
-    console.log('Admin user already exists');
+    console.log('System user already exists');
   }
 
   console.log('Seed complete.');

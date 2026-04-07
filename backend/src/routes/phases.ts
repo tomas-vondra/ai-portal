@@ -1,11 +1,9 @@
 import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../middleware/auth.js';
 import * as phaseService from '../services/phaseService.js';
 import { enqueueAgentJob } from '../services/agentService.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export async function phaseRoutes(app: FastifyInstance) {
-  app.addHook('preHandler', requireAuth);
 
   // Get phase with versions
   app.get('/:id/phases/:phaseId', async (request) => {

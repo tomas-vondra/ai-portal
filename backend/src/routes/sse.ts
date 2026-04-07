@@ -1,9 +1,8 @@
 import type { FastifyInstance } from 'fastify';
-import { requireAuth } from '../middleware/auth.js';
 import { createRedisSubscriber } from '../redis.js';
+import { SYSTEM_USER_ID } from '../config.js';
 
 export async function sseRoutes(app: FastifyInstance) {
-  app.addHook('preHandler', requireAuth);
 
   // SSE: Stream agent logs for a specific run
   app.get('/projects/:id/phases/:phaseId/log/stream', async (request, reply) => {
@@ -49,8 +48,7 @@ export async function sseRoutes(app: FastifyInstance) {
 
   // SSE: Notification stream for current user
   app.get('/notifications/stream', async (request, reply) => {
-    const userId = request.user!.id;
-    const channel = `notifications:${userId}`;
+    const channel = `notifications:${SYSTEM_USER_ID}`;
 
     reply.raw.writeHead(200, {
       'Content-Type': 'text/event-stream',
